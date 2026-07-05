@@ -1,0 +1,11 @@
+.git
+.github
+.pytest_cache
+.ruff_cache
+__pycache__
+*.pyc
+.env
+.env.prod
+data/audio/recordings/*
+!data/audio/recordings/.gitkeep
+eval/results/*.tmp

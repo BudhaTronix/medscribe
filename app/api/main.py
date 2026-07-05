@@ -143,6 +143,7 @@ async def structure_note(
         body = extraction.model_dump()
     else:
         body = extraction.model_dump()
+    body["transcript"] = transcript_text
     body["timings_ms"] = timings
     return body
 

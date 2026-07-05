@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 from app.config import Settings, get_settings
 from app.llm.client import ChatClient, LlmUnavailableError, OllamaOpenAIClient
+from app.observability import EXTRACTION_RETRY_COUNT
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +98,7 @@ def extract_clinical_note(
             error_text = str(exc)
             errors.append(error_text)
             if attempt < total_attempts:
+                EXTRACTION_RETRY_COUNT.inc()
                 messages.append({"role": "assistant", "content": raw_output})
                 messages.append(
                     {

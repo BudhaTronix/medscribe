@@ -1,0 +1,17 @@
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: clinical-voice-note-api
+#   namespace: clinical-voice-note
+# spec:
+#   rules:
+#     - host: clinical-voice-note.local
+#       http:
+#         paths:
+#           - path: /
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: clinical-voice-note-api
+#                 port:
+#                   number: 8000

@@ -266,6 +266,16 @@ Retrieval evaluation was not run because Qdrant is unavailable.
 Reason: `Qdrant is unavailable at http://localhost:6333: [Errno 111] Connection refused`
 <!-- RETRIEVAL_RESULTS_END -->
 
+## Production Demo
+
+Review `.env.prod.example`, then run:
+
+```bash
+docker compose -f docker-compose.prod.yml up --build --scale api=3
+```
+
+Why: this starts Qdrant, three stateless API replicas behind nginx, and the Gradio UI pointed at nginx. Ollama is available behind an optional compose profile, but host installation is typical on macOS.
+
 ## Developer Notes
 
 Keep using the `medscribe` conda environment:

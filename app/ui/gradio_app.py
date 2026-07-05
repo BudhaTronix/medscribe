@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import os
+import time
 from pathlib import Path
 from typing import Any
 
 import gradio as gr
+import httpx
 
 from app.asr.transcriber import TranscriptionUnavailableError, WhisperTranscriber
 from app.config import get_settings
@@ -72,6 +75,8 @@ def _dictation_to_note(
 ) -> tuple[str, str, dict[str, Any], dict[str, float]]:
     if not audio_path:
         return "", "No audio provided.", {}, {}
+    if _api_base_url():
+        return _dictation_to_note_via_api(audio_path, language)
     forced_language = language or None
     timings: dict[str, float] = {}
     try:
@@ -98,10 +103,63 @@ def _dictation_to_note(
 
 
 def _ask_guidelines(question: str) -> tuple[str, list[dict[str, Any]], str, dict[str, float]]:
+    if _api_base_url():
+        return _ask_guidelines_via_api(question)
     response = answer_question(question, settings=get_settings())
     refusal = "Refused: below retrieval threshold." if response.refused else "Answered from corpus."
     citations = [citation.model_dump() for citation in response.citations]
     return response.answer, citations, refusal, response.timings_ms
+
+
+def _dictation_to_note_via_api(
+    audio_path: str,
+    language: str,
+) -> tuple[str, str, dict[str, Any], dict[str, float]]:
+    base_url = _api_base_url()
+    if base_url is None:
+        return "", "API base URL is not configured.", {}, {}
+    with Path(audio_path).open("rb") as handle:
+        files = {"audio": (Path(audio_path).name, handle)}
+        data = {"language": language} if language else {}
+        response = httpx.post(f"{base_url}/notes/structure", data=data, files=files, timeout=120)
+    if response.status_code >= 400:
+        return "", response.text, {"error": response.text}, {}
+    payload = response.json()
+    transcript = str(payload.get("transcript", ""))
+    if payload.get("success") and "note" in payload:
+        note = payload["note"]
+        card = (
+            f"### {note.get('chief_complaint', 'Structured note')}\n\n"
+            f"**Assessment:** {note.get('assessment', '')}\n\n"
+            f"**Plan:**\n"
+            + "\n".join(f"- {item}" for item in note.get("plan", []))
+        )
+    else:
+        card = "Extraction failed validation."
+    return transcript, card, payload, dict(payload.get("timings_ms", {}))
+
+
+def _ask_guidelines_via_api(
+    question: str,
+) -> tuple[str, list[dict[str, Any]], str, dict[str, float]]:
+    base_url = _api_base_url()
+    if base_url is None:
+        return "API base URL is not configured.", [], "Refused.", {}
+    response = httpx.post(f"{base_url}/ask", json={"question": question}, timeout=120)
+    if response.status_code >= 400:
+        return response.text, [], "Refused.", {}
+    payload = response.json()
+    refusal = (
+        "Refused: below retrieval threshold."
+        if payload.get("refused")
+        else "Answered from corpus."
+    )
+    return (
+        str(payload.get("answer", "")),
+        list(payload.get("citations", [])),
+        refusal,
+        dict(payload.get("timings_ms", {})),
+    )
 
 
 def _evaluation_markdown() -> str:
@@ -111,9 +169,16 @@ def _evaluation_markdown() -> str:
     return "\n\n".join(path.read_text(encoding="utf-8") for path in paths)
 
 
+def _api_base_url() -> str | None:
+    value = os.getenv("API_BASE_URL", "").rstrip("/")
+    return value or None
+
+
 def main() -> None:
     """Launch the Gradio UI."""
-    build_app().launch(server_name="0.0.0.0")
+    build_app().launch(server_name="0.0.0.0", server_port=7860, prevent_thread_lock=True)
+    while True:
+        time.sleep(3600)
 
 
 if __name__ == "__main__":

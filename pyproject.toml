@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools==82.0.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clinical-voice-note-assistant"
+version = "0.1.0"
+description = "Local clinical dictation, structured note, and grounded retrieval demo."
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "fastapi==0.139.0",
+  "faster-whisper==1.2.1",
+  "gradio==6.19.0",
+  "httpx==0.28.1",
+  "jiwer==4.0.0",
+  "openai==2.44.0",
+  "prometheus-client==0.23.1",
+  "pydantic==2.13.4",
+  "pydantic-settings==2.14.2",
+  "python-multipart==0.0.20",
+  "PyYAML==6.0.3",
+  "qdrant-client==1.18.0",
+  "sentence-transformers==5.6.0",
+  "typer==0.26.8",
+  "uvicorn==0.38.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==9.1.1",
+  "ruff==0.15.20",
+]
+
+[project.scripts]
+clinical-voice-note = "app.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "integration: tests that need external services",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ANN"]
+ignore = ["ANN401"]

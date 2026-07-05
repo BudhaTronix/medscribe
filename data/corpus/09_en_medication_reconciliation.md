@@ -1,0 +1,14 @@
+---
+id: en-discharge-medication-reconciliation
+title: Medication Reconciliation at Discharge
+language: en
+---
+Synthetic reference document for engineering demo purposes.
+
+This synthetic reference document describes medication reconciliation at hospital discharge for a local demo. It is not clinical guidance. The aim is to produce one reliable medicine list that explains what the fictional patient, Ms Elin Shaw, should take after leaving hospital, what has stopped, what has changed and why. The process starts with the best possible medication history from the patient, carers, community pharmacy records, prior clinic letters and medicines brought from home. Allergies and intolerances are recorded with reaction type, not just the drug name, because vague allergy labels can cause avoidable substitutions.
+
+Each medicine is checked for name, dose, route, frequency, indication and duration. Temporary medicines such as antibiotics, anticoagulation after surgery, steroids, eye drops or wound treatments need explicit stop dates or review dates. Long term medicines that were held during admission are either restarted with a reason or listed as stopped with a reason. Duplicates are common when brand names, generics and combination products appear together. High risk groups include anticoagulants, insulin, opioids, antiepileptics, immunosuppressants, diuretics and medicines that affect potassium or kidney function.
+
+The discharge note should be useful to the patient and the next clinician. It avoids unexplained abbreviations and separates unchanged medicines from new, changed and stopped medicines. Monitoring tasks are assigned clearly, for example renal function after an ACE inhibitor dose change, INR follow up for warfarin, glucose review after steroid therapy or blood count monitoring for a specialist medicine. Counselling confirms that the patient understands the plan, has access to supply, can open packaging and knows who to contact with questions. Red flags include missing anticoagulation instructions, unclear insulin doses, duplicate opioid prescriptions, allergy conflict, no supply of essential medicines and absence of monitoring for a high risk change. The plan documents unresolved uncertainties rather than hiding them.
+
+The reconciliation process also checks practical continuity. The patient may need a blister pack update, delivery from a community pharmacy, written large print instructions or contact with a carer. If the hospital changed a medicine because of kidney function, blood pressure or an adverse effect, that reason is included so the old dose is not restarted accidentally. Pending results and follow up tasks are assigned to a named service where possible. This synthetic demo favours plain language and a table structure so discrepancies are visible before discharge.

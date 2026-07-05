@@ -1,0 +1,16 @@
+---
+id: de-hypertonie-erstlinie
+title: Hypertonie Erstlinientherapie
+language: de
+---
+Synthetic reference document for engineering demo purposes.
+
+Dieses synthetische Referenzdokument beschreibt eine allgemeine Vorgehensweise fuer Erwachsene mit unkomplizierter arterieller Hypertonie. Es ist fuer technische Tests geschrieben und ersetzt keine klinische Entscheidung. In einer Erstbeurteilung werden wiederholte Blutdruckmessungen in Ruhe dokumentiert, moeglichst mit validierter Manschette und passender Groesse. Eine einzelne erhoehte Messung reicht nicht aus, ausser es bestehen klare Zeichen einer akuten Gefaehrdung. Die Anamnese fragt nach familiaerer Belastung, Rauchen, Schlafqualitaet, Alkohol, koerperlicher Aktivitaet, Schmerzmitteln, Lakritze, Drogen, Schwangerschaftsmoeglichkeit und Symptomen wie Kopfschmerz, Luftnot, Brustdruck oder neurologischen Ausfaellen. Basiswerte umfassen Puls, Gewicht, Nierenfunktion, Elektrolyte, HbA1c oder Nüchternglukose, Lipide und Urinstatus.
+
+Die erste therapeutische Saeule ist eine nachvollziehbare Lebensstilberatung. Dazu gehoeren salzarme Kost, mediterran gepraegte Ernaehrung, Gewichtsreduktion bei Uebergewicht, regelmaessige Ausdaueraktivitaet, Krafttraining in angepasster Dosierung, Nikotinstopp und begrenzter Alkoholkonsum. Die Massnahmen werden konkret vereinbart, damit eine Patientin wie die fiktive Frau Mara Stein nicht nur allgemeine Hinweise erhaelt. Bei bestaetigter Hypertonie oder hohem Risiko wird frueh eine medikamentoese Behandlung begonnen. Typische Erstlinienoptionen sind ACE Hemmer oder Angiotensin Rezeptorblocker, Calciumkanalblocker und Thiazid oder thiazidartige Diuretika. Die Auswahl richtet sich nach Begleiterkrankungen, Nierenfunktion, Kaliumwerten, Alter, Nebenwirkungsprofil und Patientenpraeferenz.
+
+Bei Grad 1 Hypertonie mit niedrigem Gesamtrisiko kann nach gemeinsamer Entscheidung zunaechst eine kurze Phase intensiver Lebensstilaenderung erfolgen. Bei Grad 2, Endorganschaeden, Diabetes, chronischer Nierenerkrankung oder kardiovaskulaerer Vorerkrankung ist eine schnellere medikamentoese Einstellung sinnvoll. Viele Personen benoetigen langfristig zwei Wirkstoffe. Eine niedrige Startdosis mit geplanter Kontrolle nach zwei bis vier Wochen ist fuer die Demo als Standard beschrieben. Warnzeichen wie Brustschmerz, neue Laehmung, schwere Luftnot, Verwirrtheit oder Blutdruckwerte mit akuten Organsymptomen fuehren zu dringlicher Abklaerung. Jede Anpassung wird mit Zielwert, Heimblutdruckprotokoll, Laborplan und Nebenwirkungsberatung festgehalten.
+
+Die Verlaufskontrolle prueft, ob die Messwerte plausibel sind und ob Nebenwirkungen auftreten. Typische Fragen betreffen Schwindel beim Aufstehen, trockenen Husten, Muskelkraempfe, Beinödeme, Harndrang und die praktische Einnahme im Alltag. Wenn der Zielwert nicht erreicht wird, wird zuerst die Messmethode und die regelmaessige Einnahme besprochen, danach die Dosis angepasst oder eine Kombination gewaehlt. Eine fiktive Praxisnotiz wuerde ausserdem festhalten, ob eine sekundäre Ursache vermutet wird, zum Beispiel Schlafapnoe, Nierenerkrankung oder endokrine Stoerung. So bleibt die Entscheidung nachvollziehbar.
+
+Fuer die Demo wird zudem ein kurzer Kommunikationsplan notiert: Wer kontrolliert die Heimwerte, wann wird Labor abgenommen, und welche Symptome fuehren zu sofortigem Kontakt.

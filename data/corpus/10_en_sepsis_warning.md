@@ -1,0 +1,14 @@
+---
+id: en-sepsis-early-warning-signs
+title: Sepsis Early Warning Signs
+language: en
+---
+Synthetic reference document for engineering demo purposes.
+
+This synthetic reference document summarises early warning signs of possible sepsis for an engineering demo. It is not medical advice. In a fictional consultation with Mr Theo Marsh, the clinician starts by recognising that sepsis can present with infection plus new organ dysfunction, and early symptoms may be non specific. The history asks about fever, rigors, new confusion, breathlessness, reduced urine output, severe pain, rash, recent surgery, wounds, urinary symptoms, cough, abdominal symptoms, immunosuppression and recent antibiotics. Vital signs are central: temperature, heart rate, respiratory rate, blood pressure, oxygen saturation and mental state are documented with time.
+
+Risk is higher in very young or older people, pregnancy, frailty, diabetes, cancer treatment, immune suppression, indwelling lines, recent operation and significant kidney or liver disease. Concerning features include mottled or ashen skin, cyanosis, new drowsiness, systolic hypotension, very fast breathing, oxygen requirement, non blanching rash, severe shivering, lactate elevation where measured and urine output that is markedly reduced. A normal temperature does not exclude serious infection, especially in older or immunosuppressed patients. The demo note emphasises trend and clinical judgement rather than one isolated number.
+
+When sepsis is suspected, urgent assessment and escalation are required according to local emergency pathways. The structured note should record suspected source, time of recognition, observations, allergies, cultures if obtained, antimicrobial plan if started, fluids if given, response and escalation contact. Safety netting is essential when a patient is managed outside hospital: worsening confusion, breathlessness, blue lips, collapse, persistent fever, reduced urination, severe pain or rapid deterioration should prompt urgent help. The retrieval system should refuse to answer detailed questions that are not supported by the local corpus, rather than inventing treatment protocols. This document exists only to test grounded answers and refusal behaviour.
+
+Documentation should make uncertainty visible. A person may have infection signs without sepsis, or sepsis without an obvious source at first contact. The demo therefore records what was checked, what remains unknown and why escalation was or was not triggered. Communication with relatives or carers can be important when confusion limits the history. Follow up instructions use concrete changes rather than vague reassurance. The note should avoid promising that observation alone is safe when the clinical picture is changing, because trend is often the decisive signal.

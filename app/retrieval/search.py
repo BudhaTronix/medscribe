@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -37,7 +38,14 @@ class QdrantSearcher:
         self.settings = settings or get_settings()
         self.embedder = SentenceTransformerEmbedder(self.settings.embedding_model)
 
-    def search(self, question: str, *, top_k: int | None = None) -> SearchResponse:
+    def search(
+        self,
+        question: str,
+        *,
+        top_k: int | None = None,
+        score_threshold: float | None = None,
+        apply_default_threshold: bool = True,
+    ) -> SearchResponse:
         """Return scored chunks above the configured score threshold."""
         if not question.strip():
             return SearchResponse(results=[], timings_ms={"embed": 0.0, "retrieve": 0.0})
@@ -52,13 +60,19 @@ class QdrantSearcher:
         timings["embed"] = _elapsed_ms(started)
 
         started = time.perf_counter()
-        points = self._query(vector, top_k or self.settings.top_k)
+        threshold = self.settings.score_threshold if apply_default_threshold else score_threshold
+        points = self._query(vector, top_k or self.settings.top_k, threshold)
         timings["retrieve"] = _elapsed_ms(started)
 
         results = [_point_to_result(point) for point in points]
         return SearchResponse(results=results, timings_ms=timings)
 
-    def _query(self, vector: list[float], top_k: int) -> list[Any]:
+    def _query(
+        self,
+        vector: Sequence[float],
+        top_k: int,
+        score_threshold: float | None,
+    ) -> list[Any]:
         try:
             from qdrant_client import QdrantClient
         except ImportError as exc:
@@ -71,7 +85,7 @@ class QdrantSearcher:
                 collection_name=self.settings.qdrant_collection,
                 query=vector,
                 limit=top_k,
-                score_threshold=self.settings.score_threshold,
+                score_threshold=score_threshold,
                 with_payload=True,
             )
             return list(response.points)

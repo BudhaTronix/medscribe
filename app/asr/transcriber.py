@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ctypes
 import subprocess
 import time
 import wave
@@ -107,12 +108,45 @@ class WhisperTranscriber:
             device = (
                 None if self.settings.whisper_device == "auto" else self.settings.whisper_device
             )
+            if device != "cpu":
+                _preload_cuda_libraries()
             try:
                 self._model = WhisperModel(self.settings.whisper_model, device=device or "auto")
             except Exception as exc:
                 msg = f"Unable to load Whisper model {self.settings.whisper_model}: {exc}"
                 raise TranscriptionUnavailableError(msg) from exc
         return self._model
+
+
+_cuda_libraries_loaded = False
+
+
+def _preload_cuda_libraries() -> None:
+    """Load pip-packaged cuBLAS and cuDNN so ctranslate2 can run on the GPU.
+
+    ctranslate2 links against CUDA 12 libraries, which are usually absent from
+    the system loader path (torch ships its own CUDA under a different soname).
+    The nvidia-cublas-cu12 / nvidia-cudnn-cu12 wheels provide them, but only
+    preloading makes them visible: LD_LIBRARY_PATH is read once at process
+    start, so setting it here would have no effect. Best effort — without the
+    wheels or a GPU, faster-whisper falls back to CPU.
+    """
+    global _cuda_libraries_loaded
+    if _cuda_libraries_loaded:
+        return
+    _cuda_libraries_loaded = True
+    try:
+        import nvidia.cublas.lib
+        import nvidia.cudnn.lib
+    except ImportError:
+        return
+    for module in (nvidia.cublas.lib, nvidia.cudnn.lib):
+        lib_dir = Path(next(iter(module.__path__)))
+        for library in sorted(lib_dir.glob("*.so*")):
+            try:
+                ctypes.CDLL(str(library), mode=ctypes.RTLD_GLOBAL)
+            except OSError:
+                continue
 
 
 def _audio_duration_seconds(path: Path, segments: list[TranscriptionSegment]) -> float:

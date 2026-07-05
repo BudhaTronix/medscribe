@@ -16,7 +16,7 @@ def test_config_defaults() -> None:
     assert settings.qdrant_collection == "clinical_corpus"
     assert settings.llm_base_url == "http://localhost:11434/v1"
     assert settings.llm_api_key == "ollama"
-    assert settings.llm_model == "qwen2.5:7b-instruct"
+    assert settings.llm_model == "mistral:7b"
     assert settings.chunk_size_tokens == 500
     assert settings.chunk_overlap_tokens == 80
     assert settings.top_k == 5

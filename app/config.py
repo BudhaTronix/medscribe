@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     qdrant_collection: str = "clinical_corpus"
     llm_base_url: str = "http://localhost:11434/v1"
     llm_api_key: str = "ollama"
-    llm_model: str = "qwen2.5:7b-instruct"
+    llm_model: str = "mistral:7b"
     chunk_size_tokens: int = Field(default=500, ge=1)
     chunk_overlap_tokens: int = Field(default=80, ge=0)
     top_k: int = Field(default=5, ge=1)

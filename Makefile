@@ -1,6 +1,6 @@
 PYTHON ?= python
 
-.PHONY: test lint ingest ask transcribe structure eval eval-asr eval-retrieval ui api load-test-1 load-test-3
+.PHONY: test lint ingest ask transcribe structure eval eval-asr eval-retrieval ui api certs run load-test-1 load-test-3
 
 test:
 	$(PYTHON) -m pytest -m "not integration"
@@ -31,8 +31,14 @@ eval-retrieval:
 ui:
 	$(PYTHON) -m app.ui.gradio_app
 
+certs:
+	./scripts/generate_certs.sh
+
 api:
 	$(PYTHON) -m uvicorn app.api.main:app --reload
+
+run:
+	./scripts/start.sh
 
 load-test-1:
 	$(PYTHON) scripts/load_test.py --requests 20 --concurrency 1 --no-generate

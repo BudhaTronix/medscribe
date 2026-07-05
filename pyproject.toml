@@ -31,6 +31,10 @@ dev = [
   "pytest==9.1.1",
   "ruff==0.15.20",
 ]
+gpu = [
+  "nvidia-cublas-cu12",
+  "nvidia-cudnn-cu12",
+]
 
 [project.scripts]
 clinical-voice-note = "app.cli:main"

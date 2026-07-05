@@ -13,3 +13,4 @@ build/
 eval/results/*.tmp
 data/audio/recordings/*
 !data/audio/recordings/.gitkeep
+certs/

@@ -177,7 +177,20 @@ def _api_base_url() -> str | None:
 def main() -> None:
     """Launch the Gradio UI."""
     port = int(os.getenv("GRADIO_SERVER_PORT", "7860"))
-    build_app().launch(server_name="0.0.0.0", server_port=port, prevent_thread_lock=True)
+    launch_kwargs: dict[str, Any] = {
+        "server_name": "0.0.0.0",
+        "server_port": port,
+        "prevent_thread_lock": True,
+    }
+    certfile = os.getenv("GRADIO_SSL_CERTFILE", "certs/cert.pem")
+    keyfile = os.getenv("GRADIO_SSL_KEYFILE", "certs/key.pem")
+    if Path(certfile).is_file() and Path(keyfile).is_file():
+        # Browsers only expose getUserMedia (microphone) on a secure context, so
+        # anything reached over a network address (not localhost) needs TLS.
+        launch_kwargs["ssl_certfile"] = certfile
+        launch_kwargs["ssl_keyfile"] = keyfile
+        launch_kwargs["ssl_verify"] = False
+    build_app().launch(**launch_kwargs)
     while True:
         time.sleep(3600)
 

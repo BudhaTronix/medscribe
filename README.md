@@ -69,6 +69,25 @@ docker compose up qdrant
 
 Why: Qdrant stores the embedded corpus chunks and returns the nearest chunks for each question. Without it, the CLI will fail with a clear connection message.
 
+## Quick Start
+
+Steps 1 through 8 below can be run in one shot with:
+
+```bash
+make run
+```
+
+Why: `scripts/start.sh` chains the manual steps together: it checks the `medscribe` conda
+environment exists, installs dependencies, starts Qdrant and waits for it to be ready, generates a
+self-signed TLS certificate for the UI if one is not already present, ingests the synthetic corpus,
+checks whether Ollama is reachable (warning but not failing if it isn't), starts the API in the
+background, waits for it to become healthy, then runs the Gradio UI in the foreground. Press
+Ctrl+C to stop both the UI and the API. Set `SKIP_INSTALL=1` to skip the dependency install step,
+and override `API_PORT` or `GRADIO_SERVER_PORT` if the defaults (`8000` and `7860`) are taken.
+
+The step-by-step walkthrough below is still useful for understanding what each stage does, or for
+running a single stage on its own (for example, re-ingesting the corpus after editing `data/corpus`).
+
 ## Step By Step Execution
 
 ### 1. Confirm the environment
@@ -172,7 +191,7 @@ Why: this confirms the local retrieval loop works end to end: question embedding
 The default model is:
 
 ```bash
-ollama pull qwen2.5:7b-instruct
+ollama pull mistral:7b
 ```
 
 If you already have another local model, override it:
@@ -191,6 +210,28 @@ conda run -n medscribe make ui
 ```
 
 Why: the API exposes pipeline endpoints for integration, while the Gradio UI gives a local demo surface for dictation, grounded questions, and evaluation tables.
+
+If you will open the UI from anywhere other than `http://localhost`, generate a local TLS
+certificate first:
+
+```bash
+conda run -n medscribe make certs
+conda run -n medscribe make ui
+```
+
+Why: browsers only allow microphone access (`getUserMedia`) on a secure context. `localhost` is
+treated as secure automatically, but any other hostname or LAN/IP address needs HTTPS or the
+microphone source in the UI will fail to record. `make certs` (via `scripts/generate_certs.sh`)
+writes `certs/cert.pem` and `certs/key.pem`; `app/ui/gradio_app.py` picks them up automatically and
+switches the Gradio server to HTTPS on the same port.
+
+By default this is a plain self-signed certificate, so the browser will show a one-time "connection
+is not private" warning that you click through (Chrome: Advanced -> Proceed; Firefox: Advanced ->
+Accept the Risk and Continue). To avoid that warning entirely, install
+[mkcert](https://github.com/FiloSottile/mkcert) first (`sudo apt install mkcert` on
+Debian/Ubuntu, `brew install mkcert` on macOS), then run `mkcert -install` once to add its local CA
+to your system/browser trust stores. `make certs` detects mkcert automatically and issues a
+certificate your browser already trusts, no warning at all.
 
 ### 9. Record the five clips
 
@@ -252,6 +293,16 @@ If `make ui` reports that port `7860` is already in use, either stop the existin
 GRADIO_SERVER_PORT=7861 make ui
 ```
 
+If the microphone option in the "Dictation to Note" tab is greyed out or recording silently fails, the page is almost certainly being loaded over plain HTTP from a non-`localhost` address. Run `make certs` once, then restart the UI so it serves HTTPS (see step 8), and open the `https://` URL.
+
+If transcription fails with `Library libcublas.so.12 is not found or cannot be loaded`, you have an NVIDIA GPU that faster-whisper auto-selected, but the CUDA 12 runtime libraries it needs are missing (the torch wheels ship CUDA 13, which does not satisfy ctranslate2). Install the GPU extra into the environment and restart the API/UI:
+
+```bash
+conda run -n medscribe python -m pip install -e ".[gpu]"
+```
+
+Why: the `gpu` extra installs the `nvidia-cublas-cu12` and `nvidia-cudnn-cu12` wheels, and the transcriber preloads them automatically before loading the Whisper model. Alternatively, set `WHISPER_DEVICE=cpu` to skip the GPU entirely.
+
 ## Current Results
 
 ASR results:
@@ -274,13 +325,14 @@ Reason: `Qdrant is unavailable at http://localhost:6333: [Errno 111] Connection 
 
 ## Production Demo
 
-Review `.env.prod.example`, then run:
+Review `.env.prod.example`, generate a local TLS certificate for the UI, then run:
 
 ```bash
+make certs
 docker compose -f docker-compose.prod.yml up --build --scale api=3
 ```
 
-Why: this starts Qdrant, three stateless API replicas behind nginx, and the Gradio UI pointed at nginx. Ollama is available behind an optional compose profile, but host installation is typical on macOS.
+Why: this starts Qdrant, three stateless API replicas behind nginx, and the Gradio UI pointed at nginx. Ollama is available behind an optional compose profile, but host installation is typical on macOS. The `ui` service mounts `./certs` and serves HTTPS on `7860` whenever `certs/cert.pem` and `certs/key.pem` exist, which is required for microphone access from any host other than `localhost`.
 
 ## Developer Notes
 

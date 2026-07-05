@@ -17,13 +17,21 @@ flowchart LR
 
 ## Production Compose
 
-Review `.env.prod.example`, or copy it to `.env.prod` for your own overrides, then run:
+Review `.env.prod.example`, or copy it to `.env.prod` for your own overrides. Generate a local TLS
+certificate for the UI before starting, then run:
 
 ```bash
+make certs
 docker compose -f docker-compose.prod.yml up --build --scale api=3
 ```
 
-The UI is published on `http://localhost:7860`, and the API is available through nginx on `http://localhost:8080`. The API service has no published host port, so traffic flows through nginx. nginx access logs include `upstream_addr`, which makes replica distribution visible when scaled.
+The UI is published on `https://localhost:7860` (self-signed certificate), and the API is available through nginx on `http://localhost:8080`. The API service has no published host port, so traffic flows through nginx. nginx access logs include `upstream_addr`, which makes replica distribution visible when scaled.
+
+### TLS for the UI (microphone access)
+
+Browsers only expose `getUserMedia` (microphone capture) on a secure context: `localhost` is exempt, but any other hostname or IP is not. `make certs` (via `scripts/generate_certs.sh`) writes a `certs/cert.pem` / `certs/key.pem` pair; the `ui` service mounts `./certs` read-only into `/app/certs`, and `app/ui/gradio_app.py` automatically switches `demo.launch()` to HTTPS on the same port when both files are present. Regenerate the certificate before it expires, or provide your own certificate/key pair at those paths — for example a real certificate from an internal CA — if the UI is reachable from other machines under a stable hostname. Override the paths with `GRADIO_SSL_CERTFILE` / `GRADIO_SSL_KEYFILE` if you keep them elsewhere.
+
+By default (no [mkcert](https://github.com/FiloSottile/mkcert) installed) this is a plain self-signed certificate valid 365 days, SAN `localhost` / `127.0.0.1`, and browsers will show a "connection is not private" warning you have to click through once. If `mkcert` is installed and `mkcert -install` has been run once (adds its local CA to the system/browser trust stores), `make certs` uses it instead and issues a certificate the browser already trusts — no warning.
 
 ## Stateless API Tier
 

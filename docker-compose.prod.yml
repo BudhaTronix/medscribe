@@ -54,6 +54,8 @@ services:
         condition: service_healthy
     ports:
       - "7860:7860"
+    volumes:
+      - ./certs:/app/certs:ro
 
   ollama:
     image: ollama/ollama:latest

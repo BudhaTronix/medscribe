@@ -1,0 +1,56 @@
+- id: q_de_hypertonie_1
+  question: Welche Erstlinienmedikamente werden bei Hypertonie genannt?
+  relevant_doc_ids: [de-hypertonie-erstlinie]
+  must_include_keywords: [ACE, Calciumkanalblocker]
+- id: q_de_hypertonie_2
+  question: Welche Warnzeichen bei Hypertonie brauchen dringliche Abklaerung?
+  relevant_doc_ids: [de-hypertonie-erstlinie]
+  must_include_keywords: [Brustschmerz, Luftnot]
+- id: q_de_diabetes_1
+  question: Welche Basiswerte werden bei Typ 2 Diabetes kontrolliert?
+  relevant_doc_ids: [de-diabetes-typ2-management]
+  must_include_keywords: [HbA1c, Nierenwerte]
+- id: q_de_asthma_1
+  question: Welche Fehler bei der Inhalationstechnik werden beschrieben?
+  relevant_doc_ids: [de-asthma-inhalationstechnik]
+  must_include_keywords: [Dosieraerosol, Pulvergeraet]
+- id: q_de_antikoagulation_1
+  question: Welche Blutungswarnzeichen sind bei Antikoagulation wichtig?
+  relevant_doc_ids: [de-antikoagulation-grundlagen]
+  must_include_keywords: [schwarzer Stuhl, Bluterbrechen]
+- id: q_de_pneumonie_1
+  question: Welche Red Flags sprechen bei Pneumonie fuer dringliche Abklaerung?
+  relevant_doc_ids: [de-ambulant-erworbene-pneumonie]
+  must_include_keywords: [Sauerstoffsaettigung, Verwirrtheit]
+- id: q_de_wunde_1
+  question: Welche Warnzeichen werden bei postoperativen Wunden genannt?
+  relevant_doc_ids: [de-postoperative-wundversorgung]
+  must_include_keywords: [Eiter, Fieber]
+- id: q_de_herzinsuffizienz_1
+  question: Was gehoert zum Monitoring bei chronischer Herzinsuffizienz?
+  relevant_doc_ids: [de-herzinsuffizienz-monitoring]
+  must_include_keywords: [Gewicht, Luftnot]
+- id: q_en_ckd_1
+  question: How is chronic kidney disease staged in the corpus?
+  relevant_doc_ids: [en-chronic-kidney-disease-staging]
+  must_include_keywords: [eGFR, albumin]
+- id: q_en_discharge_1
+  question: What should medication reconciliation at discharge document?
+  relevant_doc_ids: [en-discharge-medication-reconciliation]
+  must_include_keywords: [stopped, changed]
+- id: q_en_sepsis_1
+  question: Which early warning signs of possible sepsis are listed?
+  relevant_doc_ids: [en-sepsis-early-warning-signs]
+  must_include_keywords: [confusion, urine]
+- id: q_en_discharge_2
+  question: Which high risk medicine groups are mentioned for discharge checks?
+  relevant_doc_ids: [en-discharge-medication-reconciliation]
+  must_include_keywords: [anticoagulants, insulin]
+- id: q_refusal_paediatrics
+  question: What plaster cast angle is recommended for a paediatric wrist fracture?
+  relevant_doc_ids: []
+  out_of_corpus: true
+- id: q_refusal_dermatology
+  question: Which biologic dose is recommended for plaque psoriasis induction?
+  relevant_doc_ids: []
+  out_of_corpus: true

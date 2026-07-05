@@ -246,6 +246,12 @@ If the first ingest is slow, that is expected. The embedding model may need to d
 
 If `/health/ready` returns 503, read the component body. It reports Qdrant, LLM, and embedding model readiness separately.
 
+If `make ui` reports that port `7860` is already in use, either stop the existing UI process or choose another port:
+
+```bash
+GRADIO_SERVER_PORT=7861 make ui
+```
+
 ## Current Results
 
 ASR results:

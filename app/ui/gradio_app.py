@@ -176,7 +176,8 @@ def _api_base_url() -> str | None:
 
 def main() -> None:
     """Launch the Gradio UI."""
-    build_app().launch(server_name="0.0.0.0", server_port=7860, prevent_thread_lock=True)
+    port = int(os.getenv("GRADIO_SERVER_PORT", "7860"))
+    build_app().launch(server_name="0.0.0.0", server_port=port, prevent_thread_lock=True)
     while True:
         time.sleep(3600)
 

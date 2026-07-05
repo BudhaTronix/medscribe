@@ -96,6 +96,22 @@ def structure(
     typer.echo(result.model_dump_json(indent=2))
 
 
+@app.command()
+def api() -> None:
+    """Run the FastAPI development server."""
+    import uvicorn
+
+    uvicorn.run("app.api.main:app", host="0.0.0.0", port=8000, reload=True)
+
+
+@app.command()
+def ui() -> None:
+    """Run the Gradio UI."""
+    from app.ui.gradio_app import main as run_ui
+
+    run_ui()
+
+
 def main() -> None:
     """Run the Typer application."""
     app()

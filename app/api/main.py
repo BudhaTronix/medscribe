@@ -141,11 +141,10 @@ async def structure_note(
     observe_stage_timings(timings)
     if isinstance(extraction, ExtractionFailure):
         body = extraction.model_dump()
-    else:
-        body = extraction.model_dump()
-    body["transcript"] = transcript_text
-    body["timings_ms"] = timings
-    return body
+        body["transcript"] = transcript_text
+        body["timings_ms"] = timings
+        return body
+    return extraction.note.model_dump()
 
 
 @app.post("/ask")

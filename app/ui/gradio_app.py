@@ -12,7 +12,7 @@ import httpx
 
 from app.asr.transcriber import TranscriptionUnavailableError, WhisperTranscriber
 from app.config import get_settings
-from app.llm.extraction import ExtractionFailure, extract_clinical_note
+from app.llm.extraction import ClinicalNote, ExtractionFailure, extract_clinical_note
 from app.llm.rag import answer_question
 
 DISCLAIMER = (
@@ -89,16 +89,12 @@ def _dictation_to_note(
     timings.update(transcription.timings_ms)
     extraction = extract_clinical_note(transcription.text, settings=get_settings())
     timings.update(extraction.timings_ms)
-    payload = extraction.model_dump()
     if isinstance(extraction, ExtractionFailure):
+        payload = extraction.model_dump()
         card = "Extraction failed validation."
     else:
-        note = extraction.note
-        card = (
-            f"### {note.chief_complaint}\n\n"
-            f"**Assessment:** {note.assessment}\n\n"
-            f"**Plan:**\n" + "\n".join(f"- {item}" for item in note.plan)
-        )
+        payload = extraction.note.model_dump()
+        card = _format_note_card(extraction.note)
     return transcription.text, card, payload, timings
 
 
@@ -121,22 +117,83 @@ def _dictation_to_note_via_api(
     with Path(audio_path).open("rb") as handle:
         files = {"audio": (Path(audio_path).name, handle)}
         data = {"language": language} if language else {}
-        response = httpx.post(f"{base_url}/notes/structure", data=data, files=files, timeout=120)
+        transcription = httpx.post(f"{base_url}/transcribe", data=data, files=files, timeout=120)
+    if transcription.status_code >= 400:
+        return "", transcription.text, {"error": transcription.text}, {}
+    transcription_payload = transcription.json()
+    transcript = str(transcription_payload.get("text", ""))
+    response = httpx.post(
+        f"{base_url}/notes/structure",
+        data={"transcript": transcript},
+        timeout=120,
+    )
     if response.status_code >= 400:
         return "", response.text, {"error": response.text}, {}
     payload = response.json()
-    transcript = str(payload.get("transcript", ""))
-    if payload.get("success") and "note" in payload:
-        note = payload["note"]
-        card = (
-            f"### {note.get('chief_complaint', 'Structured note')}\n\n"
-            f"**Assessment:** {note.get('assessment', '')}\n\n"
-            f"**Plan:**\n"
-            + "\n".join(f"- {item}" for item in note.get("plan", []))
-        )
+    timings = dict(transcription_payload.get("timings_ms", {}))
+    if "Patient ID" in payload:
+        card = _format_note_card(payload)
     else:
         card = "Extraction failed validation."
-    return transcript, card, payload, dict(payload.get("timings_ms", {}))
+        timings.update(payload.get("timings_ms", {}))
+    return transcript, card, payload, timings
+
+
+def _format_note_card(note: ClinicalNote | dict[str, Any]) -> str:
+    payload = note.model_dump() if isinstance(note, ClinicalNote) else note
+    return (
+        f"### Patient {payload.get('Patient ID', 'unknown')}\n\n"
+        f"**Current status:**\n{_status_section(payload.get('Current status of the patient', {}))}"
+        "\n\n"
+        f"**Medicine and dosage:**\n{_markdown_list(payload.get('Medicine and its dosage', []))}"
+        f"\n\n**Further tests:**\n{_markdown_list(payload.get('Further tests if needed', []))}"
+        f"\n\n**AI suggestion:** {_ai_suggestion_text(payload.get('AI suggestion', {}))}"
+        f"\n\n**Referenced documents:**\n"
+        f"{_reference_list(payload.get('AI suggestion', {}))}"
+    )
+
+
+def _status_section(value: Any) -> str:
+    if not isinstance(value, dict):
+        text = str(value).strip()
+        return text or "None mentioned"
+    red_flags = value.get("Red Flags", [])
+    return (
+        f"Overall description: {value.get('Overall description', '')}\n\n"
+        f"Chief Complaint: {value.get('Chief Complaint', '')}\n\n"
+        f"HPI: {value.get('HPI', '')}\n\n"
+        f"Red Flags:\n{_markdown_list(red_flags)}"
+    )
+
+
+def _markdown_list(items: Any) -> str:
+    if isinstance(items, list):
+        return "\n".join(f"- {item}" for item in items) or "- None mentioned"
+    text = str(items).strip()
+    return f"- {text}" if text else "- None mentioned"
+
+
+def _ai_suggestion_text(value: Any) -> str:
+    if isinstance(value, dict):
+        return str(value.get("suggestion", "")).strip() or "None mentioned"
+    return str(value).strip() or "None mentioned"
+
+
+def _reference_list(value: Any) -> str:
+    if not isinstance(value, dict):
+        return "- None"
+    references = value.get("referenced_documents", [])
+    if not isinstance(references, list) or not references:
+        return "- None"
+    lines = []
+    for reference in references:
+        if not isinstance(reference, dict):
+            continue
+        doc_id = reference.get("doc_id", "")
+        title = reference.get("title", "")
+        chunk_index = reference.get("chunk_index", "")
+        lines.append(f"- {doc_id} | {title} | chunk {chunk_index}")
+    return "\n".join(lines) or "- None"
 
 
 def _ask_guidelines_via_api(

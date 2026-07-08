@@ -12,7 +12,7 @@ from app.asr.transcriber import TranscriptionUnavailableError, WhisperTranscribe
 from app.config import get_settings
 from app.ingestion.pipeline import IngestionUnavailableError, ingest_corpus
 from app.llm.client import LlmUnavailableError
-from app.llm.extraction import extract_clinical_note
+from app.llm.extraction import ExtractionFailure, extract_clinical_note
 from app.llm.rag import answer_question
 from app.retrieval.search import QdrantSearcher, format_results
 
@@ -93,7 +93,10 @@ def structure(
     except LlmUnavailableError as exc:
         typer.secho(str(exc), fg=typer.colors.RED)
         raise typer.Exit(code=1) from exc
-    typer.echo(result.model_dump_json(indent=2))
+    if isinstance(result, ExtractionFailure):
+        typer.echo(result.model_dump_json(indent=2))
+    else:
+        typer.echo(result.note.model_dump_json(indent=2))
 
 
 @app.command()

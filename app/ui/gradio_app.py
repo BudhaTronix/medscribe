@@ -23,6 +23,129 @@ DISCLAIMER = (
 )
 SAVED_NOTES_DIR = Path("data/notes")
 NoteFormValues = tuple[str, str, str, str, str, str, str, str, str]
+DICTATION_CSS = """
+.dictation-compact {
+  --accent: #f97316;
+  --accent-hover: #fb923c;
+  --panel: rgba(255, 255, 255, 0.045);
+  --panel-border: rgba(255, 255, 255, 0.10);
+  --compact-gap: 12px;
+}
+.dictation-compact .gap {
+  gap: var(--compact-gap) !important;
+}
+.dictation-compact .form {
+  border-radius: 8px !important;
+}
+.dictation-top-row {
+  align-items: stretch !important;
+  gap: var(--compact-gap) !important;
+  margin-bottom: 12px !important;
+}
+.dictation-card,
+.compact-note-fields {
+  background: var(--panel) !important;
+  border: 1px solid var(--panel-border) !important;
+  border-radius: 8px !important;
+  padding: 14px !important;
+  margin: 0 0 12px 0 !important;
+}
+.dictation-card > div,
+.compact-note-fields > div {
+  background: transparent !important;
+}
+.compact-audio {
+  min-height: 76px !important;
+}
+.compact-audio > div,
+.compact-audio .wrap,
+.compact-audio .container {
+  min-height: 56px !important;
+}
+.compact-audio audio {
+  max-height: 38px !important;
+}
+.compact-audio button,
+.compact-action button,
+.compact-save-action button {
+  min-height: 42px !important;
+  border-radius: 8px !important;
+}
+.compact-action {
+  align-self: stretch !important;
+  justify-content: end !important;
+}
+.compact-action button,
+.compact-save-action button {
+  width: 100%;
+}
+.compact-action button,
+.compact-save-action button {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #111827 !important;
+  font-weight: 700 !important;
+}
+.compact-action button:hover,
+.compact-save-action button:hover {
+  background: var(--accent-hover) !important;
+  border-color: var(--accent-hover) !important;
+}
+.compact-transcript textarea {
+  min-height: 158px !important;
+  max-height: 180px !important;
+}
+.compact-section-title h3 {
+  margin: 0 0 10px 0 !important;
+  font-size: 1rem !important;
+}
+.compact-note-fields textarea {
+  min-height: 70px !important;
+}
+.compact-note-fields .field-short textarea {
+  min-height: 44px !important;
+  max-height: 56px !important;
+}
+.compact-note-fields .field-medium textarea {
+  min-height: 82px !important;
+  max-height: 98px !important;
+}
+.compact-note-fields .field-tall textarea {
+  min-height: 112px !important;
+  max-height: 132px !important;
+}
+.compact-save-row {
+  align-items: center !important;
+  justify-content: flex-end !important;
+  margin-top: 4px !important;
+}
+.compact-save-status {
+  min-height: 28px !important;
+}
+.compact-latency {
+  margin-top: 4px !important;
+}
+.compact-latency > label,
+.compact-latency pre {
+  font-size: 0.82rem !important;
+}
+.compact-disclaimer p {
+  font-size: 0.82rem !important;
+  opacity: 0.75;
+  margin-top: 8px !important;
+}
+@media (max-width: 780px) {
+  .dictation-top-row,
+  .compact-fields-row,
+  .compact-save-row {
+    flex-direction: column !important;
+  }
+  .dictation-card,
+  .compact-note-fields {
+    padding: 12px !important;
+  }
+}
+"""
 
 
 def build_app() -> gr.Blocks:
@@ -30,35 +153,101 @@ def build_app() -> gr.Blocks:
     with gr.Blocks(title="Clinical Voice Note Assistant") as demo:
         gr.Markdown("# Clinical Voice Note Assistant")
         with gr.Tabs():
-            with gr.Tab("Dictation to Note"):
-                audio = gr.Audio(
-                    sources=["upload", "microphone"],
-                    type="filepath",
-                    label="Audio",
-                )
-                language = gr.Dropdown(
-                    choices=[("Auto", ""), ("German", "de"), ("English", "en")],
-                    value="",
-                    label="Language",
-                )
-                run_note = gr.Button("Transcribe and Structure", variant="primary")
-                transcript = gr.Textbox(label="Transcript", lines=8)
-                with gr.Group():
-                    gr.Markdown("### Structured Note Fields")
-                    patient_id = gr.Textbox(label="Patient ID")
-                    overall_description = gr.Textbox(label="Overall description", lines=3)
-                    chief_complaint = gr.Textbox(label="Chief Complaint")
-                    hpi = gr.Textbox(label="HPI", lines=4)
-                    red_flags = gr.Textbox(label="Red Flags", lines=3)
-                    medicine_and_dosage = gr.Textbox(label="Medicine and its dosage", lines=3)
-                    further_tests = gr.Textbox(label="Further tests if needed", lines=3)
-                    ai_suggestion = gr.Textbox(label="AI suggestion", lines=3)
-                    referenced_documents = gr.Textbox(label="Referenced documents", lines=3)
-                    save_note = gr.Button("Save Note")
-                    save_status = gr.Markdown()
-                    saved_file = gr.File(label="Saved text file")
-                latency = gr.JSON(label="Latency")
-                gr.Markdown(DISCLAIMER)
+            with gr.Tab("Dictation to Note", elem_classes=["dictation-compact"]):
+                with gr.Row(elem_classes=["dictation-top-row"]):
+                    audio = gr.Audio(
+                        sources=["upload", "microphone"],
+                        type="filepath",
+                        label="Audio",
+                        min_width=240,
+                        scale=6,
+                        elem_classes=["compact-audio"],
+                    )
+                    language = gr.Dropdown(
+                        choices=[("Auto", ""), ("German", "de"), ("English", "en")],
+                        value="",
+                        label="Language",
+                        min_width=160,
+                        scale=3,
+                    )
+                    with gr.Column(
+                        min_width=190,
+                        scale=4,
+                        elem_classes=["compact-action"],
+                    ):
+                        run_note = gr.Button("Transcribe and Structure", variant="primary")
+
+                with gr.Group(elem_classes=["dictation-card"]):
+                    transcript = gr.Textbox(
+                        label="Transcript",
+                        lines=7,
+                        elem_classes=["compact-transcript"],
+                    )
+                with gr.Group(elem_classes=["compact-note-fields"]):
+                    gr.Markdown(
+                        "### Structured Note Fields",
+                        elem_classes=["compact-section-title"],
+                    )
+                    with gr.Row(elem_classes=["compact-fields-row"]):
+                        with gr.Column(scale=1, min_width=320):
+                            patient_id = gr.Textbox(
+                                label="Patient ID",
+                                elem_classes=["field-short"],
+                            )
+                            overall_description = gr.Textbox(
+                                label="Overall description",
+                                lines=2,
+                                elem_classes=["field-medium"],
+                            )
+                            chief_complaint = gr.Textbox(
+                                label="Chief Complaint",
+                                elem_classes=["field-short"],
+                            )
+                            hpi = gr.Textbox(
+                                label="HPI",
+                                lines=3,
+                                elem_classes=["field-tall"],
+                            )
+                        with gr.Column(scale=1, min_width=320):
+                            red_flags = gr.Textbox(
+                                label="Red Flags",
+                                lines=2,
+                                elem_classes=["field-medium"],
+                            )
+                            medicine_and_dosage = gr.Textbox(
+                                label="Medicine and its dosage",
+                                lines=2,
+                                elem_classes=["field-medium"],
+                            )
+                            further_tests = gr.Textbox(
+                                label="Further tests if needed",
+                                lines=2,
+                                elem_classes=["field-medium"],
+                            )
+                            ai_suggestion = gr.Textbox(
+                                label="AI suggestion",
+                                lines=2,
+                                elem_classes=["field-medium"],
+                            )
+                            referenced_documents = gr.Textbox(
+                                label="Referenced documents",
+                                lines=2,
+                                elem_classes=["field-medium"],
+                            )
+                    with gr.Row(elem_classes=["compact-save-row"]):
+                        save_status = gr.Markdown(
+                            scale=3,
+                            elem_classes=["compact-save-status"],
+                        )
+                        with gr.Column(
+                            scale=1,
+                            min_width=180,
+                            elem_classes=["compact-save-action"],
+                        ):
+                            save_note = gr.Button("Save Note", variant="primary")
+                        saved_file = gr.File(label="Saved text file", visible=False)
+                latency = gr.JSON(label="Latency", elem_classes=["compact-latency"])
+                gr.Markdown(DISCLAIMER, elem_classes=["compact-disclaimer"])
                 run_note.click(
                     fn=_dictation_to_note,
                     inputs=[audio, language],
@@ -430,6 +619,7 @@ def main() -> None:
         "server_name": "0.0.0.0",
         "server_port": port,
         "prevent_thread_lock": True,
+        "css": DICTATION_CSS,
     }
     certfile = os.getenv("GRADIO_SSL_CERTFILE", "certs/cert.pem")
     keyfile = os.getenv("GRADIO_SSL_KEYFILE", "certs/key.pem")

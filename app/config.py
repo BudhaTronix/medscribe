@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     llm_base_url: str = "http://localhost:11434/v1"
     llm_api_key: str = "ollama"
     llm_model: str = "mistral:7b"
+    cleanup_model_memory_after_use: bool = True
     chunk_size_tokens: int = Field(default=500, ge=1)
     chunk_overlap_tokens: int = Field(default=80, ge=0)
     top_k: int = Field(default=5, ge=1)

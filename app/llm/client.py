@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Protocol
 
 from app.config import Settings, get_settings
+
+logger = logging.getLogger(__name__)
 
 
 class LlmUnavailableError(RuntimeError):
@@ -47,10 +50,34 @@ class OllamaOpenAIClient:
         except Exception as exc:
             msg = f"LLM endpoint is unavailable at {self.settings.llm_base_url}: {exc}"
             raise LlmUnavailableError(msg) from exc
+        finally:
+            if self.settings.cleanup_model_memory_after_use:
+                self.unload_model()
         if content is None:
             msg = "LLM returned an empty response"
             raise LlmUnavailableError(msg)
         return str(content).strip()
+
+    def unload_model(self) -> None:
+        """Ask Ollama to unload the active model from memory."""
+        try:
+            import httpx
+        except ImportError:
+            return
+        try:
+            response = httpx.post(
+                f"{self._ollama_base_url()}/api/generate",
+                json={
+                    "model": self.settings.llm_model,
+                    "prompt": "",
+                    "stream": False,
+                    "keep_alive": 0,
+                },
+                timeout=10,
+            )
+            response.raise_for_status()
+        except Exception as exc:
+            logger.warning("Unable to unload Ollama model %s: %s", self.settings.llm_model, exc)
 
     def model_status(self) -> LlmStatus:
         """Check whether the model-list endpoint responds."""
@@ -73,3 +100,9 @@ class OllamaOpenAIClient:
                 api_key=self.settings.llm_api_key,
             )
         return self._client
+
+    def _ollama_base_url(self) -> str:
+        base_url = self.settings.llm_base_url.rstrip("/")
+        if base_url.endswith("/v1"):
+            return base_url.removesuffix("/v1")
+        return base_url

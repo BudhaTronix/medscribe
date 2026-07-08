@@ -303,6 +303,13 @@ conda run -n medscribe python -m pip install -e ".[gpu]"
 
 Why: the `gpu` extra installs the `nvidia-cublas-cu12` and `nvidia-cudnn-cu12` wheels, and the transcriber preloads them automatically before loading the Whisper model. Alternatively, set `WHISPER_DEVICE=cpu` to skip the GPU entirely.
 
+If CUDA memory is tight during demos, keep `CLEANUP_MODEL_MEMORY_AFTER_USE=true` (the default).
+After each transcription the app drops the Whisper model reference, runs Python garbage collection,
+and asks Torch to empty its CUDA cache. After each Ollama generation it calls Ollama with
+`keep_alive: 0` so the active LLM model is unloaded. This makes repeated requests slower because
+models reload more often, but it reduces the chance of GPU out-of-memory errors. If you have enough
+VRAM and want faster repeat calls, set `CLEANUP_MODEL_MEMORY_AFTER_USE=false`.
+
 ## Current Results
 
 ASR results:

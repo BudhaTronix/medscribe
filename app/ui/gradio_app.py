@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import os
+import re
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +21,8 @@ DISCLAIMER = (
     "Synthetic data only, not a medical device, not medical advice, "
     "demo for engineering evaluation."
 )
+SAVED_NOTES_DIR = Path("data/notes")
+NoteFormValues = tuple[str, str, str, str, str, str, str, str, str]
 
 
 def build_app() -> gr.Blocks:
@@ -39,14 +43,54 @@ def build_app() -> gr.Blocks:
                 )
                 run_note = gr.Button("Transcribe and Structure", variant="primary")
                 transcript = gr.Textbox(label="Transcript", lines=8)
-                note_card = gr.Markdown(label="Structured Note")
-                raw_json = gr.JSON(label="Raw JSON")
+                with gr.Group():
+                    gr.Markdown("### Structured Note Fields")
+                    patient_id = gr.Textbox(label="Patient ID")
+                    overall_description = gr.Textbox(label="Overall description", lines=3)
+                    chief_complaint = gr.Textbox(label="Chief Complaint")
+                    hpi = gr.Textbox(label="HPI", lines=4)
+                    red_flags = gr.Textbox(label="Red Flags", lines=3)
+                    medicine_and_dosage = gr.Textbox(label="Medicine and its dosage", lines=3)
+                    further_tests = gr.Textbox(label="Further tests if needed", lines=3)
+                    ai_suggestion = gr.Textbox(label="AI suggestion", lines=3)
+                    referenced_documents = gr.Textbox(label="Referenced documents", lines=3)
+                    save_note = gr.Button("Save Note")
+                    save_status = gr.Markdown()
+                    saved_file = gr.File(label="Saved text file")
                 latency = gr.JSON(label="Latency")
                 gr.Markdown(DISCLAIMER)
                 run_note.click(
                     fn=_dictation_to_note,
                     inputs=[audio, language],
-                    outputs=[transcript, note_card, raw_json, latency],
+                    outputs=[
+                        transcript,
+                        patient_id,
+                        overall_description,
+                        chief_complaint,
+                        hpi,
+                        red_flags,
+                        medicine_and_dosage,
+                        further_tests,
+                        ai_suggestion,
+                        referenced_documents,
+                        latency,
+                    ],
+                )
+                save_note.click(
+                    fn=_save_structured_note,
+                    inputs=[
+                        transcript,
+                        patient_id,
+                        overall_description,
+                        chief_complaint,
+                        hpi,
+                        red_flags,
+                        medicine_and_dosage,
+                        further_tests,
+                        ai_suggestion,
+                        referenced_documents,
+                    ],
+                    outputs=[save_status, saved_file],
                 )
             with gr.Tab("Ask the Guidelines"):
                 question = gr.Textbox(label="Question", lines=3)
@@ -72,9 +116,9 @@ def build_app() -> gr.Blocks:
 def _dictation_to_note(
     audio_path: str | None,
     language: str,
-) -> tuple[str, str, dict[str, Any], dict[str, float]]:
+) -> tuple[str, str, str, str, str, str, str, str, str, str, dict[str, float]]:
     if not audio_path:
-        return "", "No audio provided.", {}, {}
+        return ("", "", "", "", "", "", "", "", "", "", {})
     if _api_base_url():
         return _dictation_to_note_via_api(audio_path, language)
     forced_language = language or None
@@ -85,17 +129,25 @@ def _dictation_to_note(
             language=forced_language,
         )
     except TranscriptionUnavailableError as exc:
-        return "", str(exc), {"error": str(exc)}, timings
+        return ("", "", str(exc), "", "", "", "", "", "", "", timings)
     timings.update(transcription.timings_ms)
     extraction = extract_clinical_note(transcription.text, settings=get_settings())
     timings.update(extraction.timings_ms)
     if isinstance(extraction, ExtractionFailure):
-        payload = extraction.model_dump()
-        card = "Extraction failed validation."
-    else:
-        payload = extraction.note.model_dump()
-        card = _format_note_card(extraction.note)
-    return transcription.text, card, payload, timings
+        return (
+            transcription.text,
+            "",
+            "Extraction failed validation.",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            timings,
+        )
+    return (transcription.text, *_note_form_values(extraction.note), timings)
 
 
 def _ask_guidelines(question: str) -> tuple[str, list[dict[str, Any]], str, dict[str, float]]:
@@ -110,16 +162,16 @@ def _ask_guidelines(question: str) -> tuple[str, list[dict[str, Any]], str, dict
 def _dictation_to_note_via_api(
     audio_path: str,
     language: str,
-) -> tuple[str, str, dict[str, Any], dict[str, float]]:
+) -> tuple[str, str, str, str, str, str, str, str, str, str, dict[str, float]]:
     base_url = _api_base_url()
     if base_url is None:
-        return "", "API base URL is not configured.", {}, {}
+        return ("", "", "API base URL is not configured.", "", "", "", "", "", "", "", {})
     with Path(audio_path).open("rb") as handle:
         files = {"audio": (Path(audio_path).name, handle)}
         data = {"language": language} if language else {}
         transcription = httpx.post(f"{base_url}/transcribe", data=data, files=files, timeout=120)
     if transcription.status_code >= 400:
-        return "", transcription.text, {"error": transcription.text}, {}
+        return ("", "", transcription.text, "", "", "", "", "", "", "", {})
     transcription_payload = transcription.json()
     transcript = str(transcription_payload.get("text", ""))
     response = httpx.post(
@@ -128,15 +180,132 @@ def _dictation_to_note_via_api(
         timeout=120,
     )
     if response.status_code >= 400:
-        return "", response.text, {"error": response.text}, {}
+        return (transcript, "", response.text, "", "", "", "", "", "", "", {})
     payload = response.json()
     timings = dict(transcription_payload.get("timings_ms", {}))
     if "Patient ID" in payload:
-        card = _format_note_card(payload)
+        return (transcript, *_note_form_values(payload), timings)
     else:
-        card = "Extraction failed validation."
         timings.update(payload.get("timings_ms", {}))
-    return transcript, card, payload, timings
+        return (
+            transcript,
+            "",
+            "Extraction failed validation.",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            timings,
+        )
+
+
+def _note_form_values(note: ClinicalNote | dict[str, Any]) -> NoteFormValues:
+    payload = note.model_dump() if isinstance(note, ClinicalNote) else note
+    status = payload.get("Current status of the patient", {})
+    if not isinstance(status, dict):
+        status = {}
+    return (
+        str(payload.get("Patient ID", "")),
+        str(status.get("Overall description", "")),
+        str(status.get("Chief Complaint", "")),
+        str(status.get("HPI", "")),
+        _plain_list(status.get("Red Flags", [])),
+        _plain_list(payload.get("Medicine and its dosage", [])),
+        _plain_list(payload.get("Further tests if needed", [])),
+        _ai_suggestion_text(payload.get("AI suggestion", {})),
+        _references_plain_text(payload.get("AI suggestion", {})),
+    )
+
+
+def _save_structured_note(
+    transcript: str,
+    patient_id: str,
+    overall_description: str,
+    chief_complaint: str,
+    hpi: str,
+    red_flags: str,
+    medicine_and_dosage: str,
+    further_tests: str,
+    ai_suggestion: str,
+    referenced_documents: str,
+) -> tuple[str, str | None]:
+    if not any(
+        value.strip()
+        for value in (
+            transcript,
+            patient_id,
+            overall_description,
+            chief_complaint,
+            hpi,
+            red_flags,
+            medicine_and_dosage,
+            further_tests,
+            ai_suggestion,
+            referenced_documents,
+        )
+    ):
+        return "Nothing to save yet.", None
+
+    SAVED_NOTES_DIR.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    safe_patient_id = _safe_filename_part(patient_id or "unknown")
+    path = SAVED_NOTES_DIR / f"note_{safe_patient_id}_{timestamp}.txt"
+    path.write_text(
+        _structured_note_text(
+            transcript=transcript,
+            patient_id=patient_id,
+            overall_description=overall_description,
+            chief_complaint=chief_complaint,
+            hpi=hpi,
+            red_flags=red_flags,
+            medicine_and_dosage=medicine_and_dosage,
+            further_tests=further_tests,
+            ai_suggestion=ai_suggestion,
+            referenced_documents=referenced_documents,
+        ),
+        encoding="utf-8",
+    )
+    return f"Saved to `{path}`.", str(path)
+
+
+def _structured_note_text(
+    *,
+    transcript: str,
+    patient_id: str,
+    overall_description: str,
+    chief_complaint: str,
+    hpi: str,
+    red_flags: str,
+    medicine_and_dosage: str,
+    further_tests: str,
+    ai_suggestion: str,
+    referenced_documents: str,
+) -> str:
+    return (
+        f"Patient ID: {patient_id.strip()}\n\n"
+        "Current status of the patient\n"
+        f"Overall description: {overall_description.strip()}\n"
+        f"Chief Complaint: {chief_complaint.strip()}\n"
+        f"HPI: {hpi.strip()}\n"
+        f"Red Flags:\n{_bulleted_text(red_flags)}\n\n"
+        f"Medicine and its dosage:\n{_bulleted_text(medicine_and_dosage)}\n\n"
+        f"Further tests if needed:\n{_bulleted_text(further_tests)}\n\n"
+        f"AI suggestion:\n{ai_suggestion.strip()}\n\n"
+        f"Referenced documents:\n{_bulleted_text(referenced_documents)}\n\n"
+        f"Transcript:\n{transcript.strip()}\n"
+    )
+
+
+def _bulleted_text(value: str) -> str:
+    lines = [line.strip(" -") for line in value.splitlines() if line.strip(" -")]
+    return "\n".join(f"- {line}" for line in lines) if lines else "- None"
+
+
+def _safe_filename_part(value: str) -> str:
+    return re.sub(r"[^A-Za-z0-9_.-]+", "_", value.strip() or "unknown")[:80]
 
 
 def _format_note_card(note: ClinicalNote | dict[str, Any]) -> str:
@@ -173,10 +342,33 @@ def _markdown_list(items: Any) -> str:
     return f"- {text}" if text else "- None mentioned"
 
 
+def _plain_list(items: Any) -> str:
+    if isinstance(items, list):
+        return "\n".join(str(item) for item in items)
+    return str(items).strip()
+
+
 def _ai_suggestion_text(value: Any) -> str:
     if isinstance(value, dict):
         return str(value.get("suggestion", "")).strip() or "None mentioned"
     return str(value).strip() or "None mentioned"
+
+
+def _references_plain_text(value: Any) -> str:
+    if not isinstance(value, dict):
+        return ""
+    references = value.get("referenced_documents", [])
+    if not isinstance(references, list):
+        return ""
+    lines = []
+    for reference in references:
+        if not isinstance(reference, dict):
+            continue
+        doc_id = reference.get("doc_id", "")
+        title = reference.get("title", "")
+        chunk_index = reference.get("chunk_index", "")
+        lines.append(f"{doc_id} | {title} | chunk {chunk_index}")
+    return "\n".join(lines)
 
 
 def _reference_list(value: Any) -> str:

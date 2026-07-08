@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import ctypes
+import gc
+import logging
 import subprocess
 import time
 import wave
@@ -13,6 +15,7 @@ from typing import Any, Literal
 from app.config import Settings, get_settings
 
 LanguageCode = Literal["de", "en"]
+logger = logging.getLogger(__name__)
 
 
 class TranscriptionUnavailableError(RuntimeError):
@@ -61,42 +64,46 @@ class WhisperTranscriber:
             raise TranscriptionUnavailableError(msg)
 
         timings: dict[str, float] = {}
-        started = time.perf_counter()
-        model = self._load_model()
-        timings["load_model"] = _elapsed_ms(started)
-
-        started = time.perf_counter()
         try:
-            segments_iter, info = model.transcribe(str(path), language=language)
-            segments = [
-                TranscriptionSegment(
-                    start=float(segment.start),
-                    end=float(segment.end),
-                    text=str(segment.text).strip(),
-                )
-                for segment in segments_iter
-            ]
-        except Exception as exc:
-            msg = f"Unable to transcribe {path}: {exc}"
-            raise TranscriptionUnavailableError(msg) from exc
-        timings["transcribe"] = _elapsed_ms(started)
+            started = time.perf_counter()
+            model = self._load_model()
+            timings["load_model"] = _elapsed_ms(started)
 
-        text = " ".join(segment.text for segment in segments).strip()
-        processing_seconds = timings["transcribe"] / 1000
-        duration_seconds = _audio_duration_seconds(path, segments)
-        real_time_factor = (
-            round(duration_seconds / processing_seconds, 3) if processing_seconds > 0 else 0.0
-        )
+            started = time.perf_counter()
+            try:
+                segments_iter, info = model.transcribe(str(path), language=language)
+                segments = [
+                    TranscriptionSegment(
+                        start=float(segment.start),
+                        end=float(segment.end),
+                        text=str(segment.text).strip(),
+                    )
+                    for segment in segments_iter
+                ]
+            except Exception as exc:
+                msg = f"Unable to transcribe {path}: {exc}"
+                raise TranscriptionUnavailableError(msg) from exc
+            timings["transcribe"] = _elapsed_ms(started)
 
-        return TranscriptionResult(
-            text=text,
-            segments=segments,
-            detected_language=str(getattr(info, "language", language or "unknown")),
-            duration_seconds=round(duration_seconds, 3),
-            processing_seconds=round(processing_seconds, 3),
-            real_time_factor=real_time_factor,
-            timings_ms=timings,
-        )
+            text = " ".join(segment.text for segment in segments).strip()
+            processing_seconds = timings["transcribe"] / 1000
+            duration_seconds = _audio_duration_seconds(path, segments)
+            real_time_factor = (
+                round(duration_seconds / processing_seconds, 3) if processing_seconds > 0 else 0.0
+            )
+
+            return TranscriptionResult(
+                text=text,
+                segments=segments,
+                detected_language=str(getattr(info, "language", language or "unknown")),
+                duration_seconds=round(duration_seconds, 3),
+                processing_seconds=round(processing_seconds, 3),
+                real_time_factor=real_time_factor,
+                timings_ms=timings,
+            )
+        finally:
+            if self.settings.cleanup_model_memory_after_use:
+                self.cleanup_model_memory()
 
     def _load_model(self) -> Any:
         if self._model is None:
@@ -116,6 +123,12 @@ class WhisperTranscriber:
                 msg = f"Unable to load Whisper model {self.settings.whisper_model}: {exc}"
                 raise TranscriptionUnavailableError(msg) from exc
         return self._model
+
+    def cleanup_model_memory(self) -> None:
+        """Release the loaded Whisper model and ask CUDA allocators to free cached memory."""
+        self._model = None
+        gc.collect()
+        _empty_torch_cuda_cache()
 
 
 _cuda_libraries_loaded = False
@@ -147,6 +160,19 @@ def _preload_cuda_libraries() -> None:
                 ctypes.CDLL(str(library), mode=ctypes.RTLD_GLOBAL)
             except OSError:
                 continue
+
+
+def _empty_torch_cuda_cache() -> None:
+    try:
+        import torch
+    except ImportError:
+        return
+    try:
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
+    except Exception as exc:
+        logger.warning("Unable to empty torch CUDA cache after transcription: %s", exc)
 
 
 def _audio_duration_seconds(path: Path, segments: list[TranscriptionSegment]) -> float:

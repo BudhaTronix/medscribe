@@ -1,0 +1,24 @@
+Patient ID: 1374
+
+Current status of the patient
+Overall description: patient ID 1374 has kidney problem with severe urination and has been advised high brufin 500 the patient has been asked for further test of USG that needs to be done by next week
+Chief Complaint: kidney problem with severe urination and has been advised high brufin 500 the patient has been asked for further test of USG that needs to be done by next week
+HPI: patient ID 1374 has kidney problem with severe urination and has been advised high brufin 500 the patient has been asked for further test of USG that needs to be done by next week
+Red Flags:
+- None
+
+Medicine and its dosage:
+- None
+
+Further tests if needed:
+- None
+
+AI suggestion:
+Consult the treating doctor for further evaluation and management.
+
+Referenced documents:
+- en-chronic-kidney-disease-staging | Chronic Kidney Disease Staging | chunk 0
+- de-herzinsuffizienz-monitoring | Herzinsuffizienz Monitoring | chunk 0
+
+Transcript:
+patient ID 1374 has kidney problem with severe urination and has been advised high brufin 500 the patient has been asked for further test of USG that needs to be done by next week
